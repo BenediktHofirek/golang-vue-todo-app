@@ -18,6 +18,31 @@ services:
       retries: 5
       start_period: 5s
 
+  migrator:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM ubuntu:bionic
+
+        RUN apt-get update && \
+            apt-get install -y \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg-agent
+
+        RUN curl -sSL https://packagecloud.io/golang-migrate/migrate/gpgkey | apt-key add -
+        RUN echo "deb https://packagecloud.io/golang-migrate/migrate/ubuntu/ bionic main" > /etc/apt/sources.list.d/migrate.list
+        RUN apt-get update && \
+            apt-get install -y migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    working_dir: "/app"
+    volumes:
+      - "./api/migrations/:/app/migrations"
+    command: "migrate -database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path migrations up"
+
 volumes:
   postgres_data:
     driver: local
