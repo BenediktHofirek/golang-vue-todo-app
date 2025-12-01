@@ -16,9 +16,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
+      start_period: 3s
 
-  migrator:
+  db_migrator:
+    container_name: db_migrator
     build:
       context: .
       dockerfile_inline: |
@@ -38,10 +39,32 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    working_dir: "/app"
     volumes:
-      - "./api/migrations/:/app/migrations"
-    command: "migrate -database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path migrations up"
+      - "./api/migrations:/api/migrations"
+    command: "migrate -database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path /api/migrations up"
+
+  db_seeder:
+    container_name: db_seeder
+    image: postgres:latest
+    volumes:
+      - "./api/seeds:/api/seeds"
+    depends_on:
+      db:
+        condition: service_healthy
+      db_migrator:
+        condition: service_completed_successfully
+    command: |-
+      /bin/sh -c '
+      echo "Running all seed scripts from /api/seeds...";
+      find /api/seeds -maxdepth 1 -name "*.sql" -exec /bin/sh -c "psql -f \"{}\" || exit 1" \;
+      echo "Database seeding complete.";
+      '
+    environment:
+      # Psql client automatically reads these variables:
+      PGHOST: db
+      PGUSER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: ${DB_NAME}
 
 volumes:
   postgres_data:
