@@ -2,6 +2,11 @@
 
 [URL](https://github.com/BenediktHofirek/golang-vue-todo-app)
 
+## Getting started
+- Copy envs: `cp ./env.example ./env`
+- Start docker compose: `docker compose up --watch`
+- Visit [localhost:8000](http://localhost:8000) (to view database, connect to http://localhost:8001)
+
 With inspiration from [Google tasks](https://tasks.google.com/tasks/)
 
 Todo:

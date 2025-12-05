@@ -33,5 +33,5 @@ func main() {
 	server.setupRoutes()
 
 	port := os.Getenv("API_PORT")
-	server.router.Run(":" + port)
+	server.router.Run("0.0.0.0:" + port)
 }

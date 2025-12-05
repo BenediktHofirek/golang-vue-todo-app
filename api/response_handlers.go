@@ -13,16 +13,11 @@ type APIResponse struct {
 }
 
 func ResponseOk(c *gin.Context, data any) {
-  c.JSON(http.StatusOK, APIResponse{
-    Code:    http.StatusOK,
-    Data:    data,
-  })
+  c.JSON(http.StatusOK, data)
 }
 
 func ResponseNoContent(c *gin.Context) {
-  c.JSON(http.StatusNoContent, APIResponse{
-    Code:    http.StatusNoContent,
-  })
+  c.JSON(http.StatusNoContent, gin.H{})
 }
 
 func ResponseBadRequest(c *gin.Context, err error) {

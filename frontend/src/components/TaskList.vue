@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, shallowRef } from 'vue';
 
 const userId = 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
 
-let todoList = ref();
+let todoList = shallowRef();
 
 onMounted(() => {
-  fetch(`http://localhost:8080/api/v1/todos/${userId}`).then((todos) => {
+  fetch(`/api/v1/todos/${userId}`).then(async (response) => {
+    const todos = await response.json();
     todoList.value = todos
   })
 })
@@ -14,7 +15,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-20 h-20 bg-green-400">
+  <div class="bg-green-400">
     <ul v-if="todoList">
       <li v-for="todo in todoList" :key="todo.id">
         {{ todo.title }}
