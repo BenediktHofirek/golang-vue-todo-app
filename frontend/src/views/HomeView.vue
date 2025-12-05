@@ -10,6 +10,6 @@ import { ref } from 'vue';
 <template>
   <main :id>
     The count is {{ count }}
-    <button @click.prevent="count++">Add one</button>
+    <button class="text-xl font-bold" @click.prevent="count++">Add one</button>
   </main>
 </template>
