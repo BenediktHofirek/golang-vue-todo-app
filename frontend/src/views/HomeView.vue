@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import TaskList from '@/components/TaskList.vue';
 
-  let text = "Hello world"
-  const id = "somethin"
 
-  let count = ref(0)
 </script>
 
 <template>
-  <main :id>
-    The count is {{ count }}
-    <button class="text-xl font-bold" @click.prevent="count++">Add one</button>
+  <main class="w-full h-full flex bg-sky-100">
+    <TaskList class="m-auto mt-12" />
   </main>
 </template>
