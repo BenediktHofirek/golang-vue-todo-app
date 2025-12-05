@@ -1,10 +1,73 @@
 services:
+  nginx:
+    build:
+      dockerfile_inline: |
+        FROM nginx:latest
+        COPY ./nginx.dev.conf.template /etc/nginx/nginx.conf.template
+      context: .
+    container_name: nginx_reverse_proxy
+    restart: unless-stopped
+    ports:
+      - "5000:80"
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./nginx.dev.conf.template
+          target: /etc/nginx/nginx.conf.template
+    command: sh -c "envsubst '$$API_PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"
+    environment:
+      - API_PORT=${API_PORT}
+    depends_on:
+      api:
+        condition: service_healthy
+      # client:
+      #   condition: service_healthy
+    networks:
+      - public_net
+
+  api:
+    build:
+      context: ./api
+      dockerfile_inline: |
+        FROM golang:1.25-alpine
+        WORKDIR /app
+        RUN apk update && apk add --no-cache curl # For healthcheck
+        RUN go install github.com/air-verse/air@latest # For live reload
+    command: sh -c "go mod download && air -c .air.toml"
+    restart: unless-stopped
+    volumes:
+      - "./api:/app"
+    develop:
+      watch:
+        - path: ./api/go.mod
+          action: restart
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${API_PORT}/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 5s
+    environment:
+      # DB
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=${DB_PORT}
+      - DB_CONNECTION_COUNT=${DB_CONNECTION_COUNT}
+      # SERVER
+      - API_PORT=${API_PORT}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal_net
+      - public_net
+
   db:
     image: postgres:latest
     container_name: "${DB_NAME}_database"
     restart: unless-stopped
-    ports:
-      - "${DB_PORT}:5432"
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -17,6 +80,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 3s
+    networks:
+      - internal_net
 
   db_migrator:
     container_name: db_migrator
@@ -42,6 +107,8 @@ services:
     volumes:
       - "./api/db/migrations:/api/db/migrations"
     command: "migrate -database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path /api/db/migrations up"
+    networks:
+      - internal_net
 
   db_seeder:
     container_name: db_seeder
@@ -65,7 +132,15 @@ services:
       PGUSER: ${DB_USER}
       PGPASSWORD: ${DB_PASSWORD}
       PGDATABASE: ${DB_NAME}
+    networks:
+      - internal_net
 
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  public_net:
+    driver: bridge
+  internal_net:
+    driver: bridge

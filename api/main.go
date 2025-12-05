@@ -6,37 +6,32 @@ import (
 
 	"github.com/BenediktHofirek/golang-vue-todo-app/db"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 type Server struct {
 	queries *db.Queries
-	router *gin.Engine
+	router  *gin.Engine
 }
 
 func main() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
 	database, err := db.CreateDbPool()
 	if err != nil {
 		log.Fatal("Failed to connect to db:", err)
 	}
 	defer database.Close()
 
-	queries := db.New(database);
+	queries := db.New(database)
 
 	router := gin.Default()
 
-	server := &Server{ 
+	server := &Server{
 		queries: queries,
-		router: router,
+		router:  router,
 	}
 
+	server.setupHealthcheck()
 	server.setupRoutes()
 
-	port := os.Getenv("PORT")
+	port := os.Getenv("API_PORT")
 	server.router.Run(":" + port)
 }
