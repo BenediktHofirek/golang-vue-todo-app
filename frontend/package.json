@@ -18,6 +18,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@fontsource-variable/nunito-sans": "^5.2.7",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3"
   },

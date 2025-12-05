@@ -1,10 +1,6 @@
 services:
   nginx:
-    build:
-      dockerfile_inline: |
-        FROM nginx:latest
-        COPY ./nginx.dev.conf.template /etc/nginx/nginx.conf.template
-      context: .
+    image: nginx:latest
     container_name: nginx_reverse_proxy
     restart: unless-stopped
     ports:
@@ -12,6 +8,7 @@ services:
     develop:
       watch:
         - action: sync+restart
+          initial_sync: true
           path: ./nginx.dev.conf.template
           target: /etc/nginx/nginx.conf.template
     command: sh -c "envsubst '$$API_PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"
@@ -33,19 +30,11 @@ services:
     volumes:
       - "./frontend:/app"
       - "/app/node_modules" # don't override installed node modules
-    develop:
-      watch:
-        - path: ./frontend/package.json
-          action: restart
-        - path: ./frontend/vite.config.js
-          action: restart
-        - path: ./frontend/pnpm-lock.yaml
-          action: rebuild
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5173"]
       interval: 5s
       timeout: 3s
-      retries: 2
+      retries: 5
       start_period: 2s
     networks:
       - public_net
@@ -53,12 +42,7 @@ services:
   api:
     build:
       context: ./api
-      dockerfile_inline: |
-        FROM golang:1.25-alpine
-        WORKDIR /app
-        RUN apk update && apk add --no-cache curl # For healthcheck
-        RUN go install github.com/air-verse/air@latest # For live reload
-    command: sh -c "go mod download && air -c .air.toml"
+      dockerfile: dev.Dockerfile
     restart: unless-stopped
     volumes:
       - "./api:/app"
@@ -70,7 +54,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:${API_PORT}/health"]
       interval: 5s
       timeout: 3s
-      retries: 2
+      retries: 5
       start_period: 5s
     environment:
       # DB
@@ -111,29 +95,15 @@ services:
       - internal_net
 
   db_migrator:
+    image: migrate/migrate:v4.19.1
     container_name: db_migrator
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM ubuntu:bionic
-
-        RUN apt-get update && \
-            apt-get install -y \
-            apt-transport-https \
-            ca-certificates \
-            curl \
-            gnupg-agent
-
-        RUN curl -sSL https://packagecloud.io/golang-migrate/migrate/gpgkey | apt-key add -
-        RUN echo "deb https://packagecloud.io/golang-migrate/migrate/ubuntu/ bionic main" > /etc/apt/sources.list.d/migrate.list
-        RUN apt-get update && \
-            apt-get install -y migrate
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - "./api/db/migrations:/api/db/migrations"
-    command: "migrate -database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path /api/db/migrations up"
+      - "./api/db/migrations:/app/migrations"
+    entrypoint: "migrate"
+    command: "-database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path /app/migrations up"
     networks:
       - internal_net
 
@@ -141,7 +111,7 @@ services:
     container_name: db_seeder
     image: postgres:latest
     volumes:
-      - "./api/db/seeds:/api/db/seeds"
+      - "./api/db/seeds:/app/seeds"
     depends_on:
       db:
         condition: service_healthy
@@ -149,8 +119,8 @@ services:
         condition: service_completed_successfully
     command: |-
       /bin/sh -c '
-      echo "Running all seed scripts from /api/db/seeds...";
-      find /api/db/seeds -maxdepth 1 -name "*.sql" -exec /bin/sh -c "psql -f \"{}\" || exit 1" \;
+      echo "Running all seed scripts from /app/seeds...";
+      find /app/seeds -maxdepth 1 -name "*.sql" -exec /bin/sh -c "psql -f \"{}\" || exit 1" \;
       echo "Database seeding complete.";
       '
     environment:
