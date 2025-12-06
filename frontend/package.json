@@ -15,7 +15,9 @@
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
     "lint:eslint": "eslint . --fix --cache",
     "lint": "run-s lint:*",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "pre-commit-lint": "eslint --fix --cache",
+    "pre-commit-format": "prettier --write --experimental-cli"
   },
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.2.7",

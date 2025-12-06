@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import TodoList from '@/components/TodoList.vue';
-
+import TodoList from '@/components/TodoList.vue'
 </script>
 
 <template>
-  <main class="w-full h-full flex">
+  <main class="flex h-full w-full">
     <TodoList class="m-auto mt-12" />
   </main>
 </template>

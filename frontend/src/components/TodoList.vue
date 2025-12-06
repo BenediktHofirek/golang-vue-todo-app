@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, shallowRef } from 'vue'
 import AddTask from '@material-symbols/svg-600/outlined/add_task.svg'
-import Todo from './Todo.vue'
+import TodoItem from './TodoItem.vue'
 
 const userId = 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
 
@@ -41,7 +41,7 @@ function addTodo() {
     </button>
 
     <ul v-if="todoList" class="px-2">
-      <Todo v-for="todo in todoList" :key="todo.id" :todo />
+      <TodoItem v-for="todo in todoList" :key="todo.id" :todo />
     </ul>
     <div v-else>Fetching todo list...</div>
   </div>
