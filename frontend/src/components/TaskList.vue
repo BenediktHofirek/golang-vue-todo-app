@@ -16,6 +16,7 @@ onMounted(() => {
 
 <template>
   <div class="bg-white w-full max-w-2xl rounded-xl border border-gray-100 hover:shadow-md p-4">
+    <h4 class="text-xl font-medium mb-2">Task List</h4>
     <ul v-if="todoList">
       <li v-for="todo in todoList" :key="todo.id">
         {{ todo.title }}

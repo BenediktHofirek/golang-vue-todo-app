@@ -24,11 +24,11 @@ RETURNING id, user_id, title, description, completed, due_date, created_at, upda
 `
 
 type Todo_CreateOneParams struct {
-	UserID      string             `json:"user_id"`
+	UserID      string             `json:"userId"`
 	Title       string             `json:"title"`
 	Description *string            `json:"description"`
 	Completed   bool               `json:"completed"`
-	DueDate     pgtype.Timestamptz `json:"due_date"`
+	DueDate     pgtype.Timestamptz `json:"dueDate"`
 }
 
 func (q *Queries) Todo_CreateOne(ctx context.Context, arg Todo_CreateOneParams) (Todo, error) {
@@ -61,7 +61,7 @@ AND user_id = $2
 
 type Todo_DeleteOneParams struct {
 	ID     int64  `json:"id"`
-	UserID string `json:"user_id"`
+	UserID string `json:"userId"`
 }
 
 func (q *Queries) Todo_DeleteOne(ctx context.Context, arg Todo_DeleteOneParams) error {
@@ -130,7 +130,7 @@ AND user_id = $2
 
 type Todo_GetOneByIdParams struct {
 	ID     int64  `json:"id"`
-	UserID string `json:"user_id"`
+	UserID string `json:"userId"`
 }
 
 func (q *Queries) Todo_GetOneById(ctx context.Context, arg Todo_GetOneByIdParams) (Todo, error) {
@@ -164,9 +164,9 @@ type Todo_UpdateOneParams struct {
 	Title       *string            `json:"title"`
 	Description *string            `json:"description"`
 	Completed   *bool              `json:"completed"`
-	DueDate     pgtype.Timestamptz `json:"due_date"`
+	DueDate     pgtype.Timestamptz `json:"dueDate"`
 	ID          int64              `json:"id"`
-	UserID      string             `json:"user_id"`
+	UserID      string             `json:"userId"`
 }
 
 func (q *Queries) Todo_UpdateOne(ctx context.Context, arg Todo_UpdateOneParams) (Todo, error) {
