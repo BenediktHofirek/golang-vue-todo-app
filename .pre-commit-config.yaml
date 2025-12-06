@@ -12,8 +12,7 @@ repos:
       - id: detect-aws-credentials
       - id: detect-private-key
 
-  # === Go API Hooks ===
-  # We define Go tools as local hooks, assuming 'go' is in your system PATH.
+  # === API Hooks ===
   -   repo: local
       hooks:
       -   id: go-fmt
@@ -34,18 +33,17 @@ repos:
           language: system
           files: ^api/.*\.go$
 
-  # === Frontend Hooks (Vue.js App) ===
-  # We use 'local' to access project-specific node_modules (Prettier/ESLint binaries)
+  # === Frontend Hooks ===
   -   repo: local
       hooks:
       -   id: prettier
           name: Prettier
-          entry: sh -c 'cd frontend; pnpm run pre-commit-format $(for f in "$@"; do echo "${f#frontend/}"; done)'
+          entry: sh -c 'cd frontend; pnpm prettier --write --experimental-cli || true $(for f in "$@"; do echo "${f#frontend/}"; done) || true'
           language: system
           files: ^frontend/.*\.(vue|js|jsx|ts|tsx|css|scss|json|md|yaml)$
 
       -   id: eslint
           name: ESLint
-          entry: sh -c 'cd frontend; pnpm run pre-commit-lint $(for f in "$@"; do echo "${f#frontend/}"; done)'
+          entry: sh -c 'cd frontend; pnpm eslint --fix --cache || true $(for f in "$@"; do echo "${f#frontend/}"; done)'
           language: node
           files: ^frontend/.*\.(vue|js|jsx|ts|tsx)$

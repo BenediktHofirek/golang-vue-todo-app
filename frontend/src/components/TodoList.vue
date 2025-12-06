@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { onMounted, shallowRef } from 'vue'
 import AddTask from '@material-symbols/svg-600/outlined/add_task.svg'
 import TodoItem from './TodoItem.vue'
+import { useQuery } from '@tanstack/vue-query'
+import { apiClient } from '@/apiClient'
 
 const userId = 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
 
-const todoList = shallowRef()
-
-onMounted(() => {
-  fetch(`/api/v1/todos/${userId}`).then(async (response) => {
-    const todos = await response.json()
-    todoList.value = todos
-  })
+const {
+  isPending,
+  isError,
+  data: todoList,
+} = useQuery({
+  queryKey: ['todos'],
+  queryFn: ({ signal }) => {
+    return apiClient.get(`/todos/${userId}`, {
+      signal,
+    })
+  },
 })
 
 function addTodo() {
@@ -41,9 +46,12 @@ function addTodo() {
       <span>Add a task</span>
     </button>
 
-    <ul v-if="todoList">
+    <div v-if="isPending">Todo list is pending...</div>
+    <div v-else-if="isError">
+      Oh no, an error has ocurred during fetch of todo list!
+    </div>
+    <ul v-else-if="todoList">
       <TodoItem v-for="todo in todoList" :key="todo.id" :todo />
     </ul>
-    <div v-else>Fetching todo list...</div>
   </div>
 </template>

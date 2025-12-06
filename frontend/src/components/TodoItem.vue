@@ -2,14 +2,12 @@
 import type { Todo } from '@/models'
 import RadioButtonUnchecked from '@material-symbols/svg-600/outlined/radio_button_unchecked.svg'
 import Check from '@material-symbols/svg-600/outlined/check.svg'
-import { useDateFormat } from '@vueuse/core'
-import { ref } from 'vue'
 
 const props = defineProps<{
   todo: Todo
 }>()
 
-const createdDate = useDateFormat(props.todo.createdAt, 'ddd D MMM')
+// const createdDate = useDateFormat(props.todo.createdAt, 'ddd D MMM')
 
 function toggleChecked() {
   console.log('toggling', props.todo.id)
@@ -21,9 +19,8 @@ function toggleChecked() {
     <div class="ml-4">Today</div>
     <div
       class="
-        align-start flex px-4 justify-start transition-colors
+        flex cursor-default justify-start px-4 transition-colors
         hover:bg-blue-50
-        cursor-default
       "
     >
       <div

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { VueQueryDevtools } from '@tanstack/vue-query-devtools'
 import { RouterLink, RouterView } from 'vue-router'
 </script>
 
@@ -10,6 +11,7 @@ import { RouterLink, RouterView } from 'vue-router'
   </header>
 
   <RouterView />
+  <VueQueryDevtools />
 </template>
 
 <style scoped></style>

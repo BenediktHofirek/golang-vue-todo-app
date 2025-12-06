@@ -11,8 +11,8 @@ Then visit [localhost:8000](http://localhost:8000) (to view database, connect to
 With inspiration from [Google tasks](https://tasks.google.com/tasks/)
 
 Todo:
-- display list of tasks
 - implement tankstack query
+- complete todo list ui
 - ui basic crud
 - add auth
 - add start_date to task
