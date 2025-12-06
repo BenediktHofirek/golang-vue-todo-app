@@ -22,25 +22,26 @@ function addTodo() {
 <template>
   <div
     class="
-      w-full max-w-2xl rounded-xl border border-gray-100 bg-white px-2 py-4
+      w-full max-w-2xl rounded-xl border border-gray-100 bg-white
       hover:shadow-md
     "
   >
-    <h4 class="mb-2 pl-2 text-xl font-medium">Task List</h4>
+    <h4 class="p-4 text-xl font-medium">Task List</h4>
 
     <button
       @click="addTodo()"
       class="
-        mb-4 flex w-full items-center justify-start gap-4 rounded-full p-2 font-semibold
-        text-blue-600 transition-colors
+        m-auto mb-4 flex w-[calc(100%-1rem)] items-center justify-start gap-4 rounded-full p-2
+        font-semibold text-blue-600 transition-colors
         hover:cursor-pointer hover:bg-blue-50
+        active:bg-blue-100
       "
     >
       <AddTask class="size-6 fill-blue-600" />
       <span>Add a task</span>
     </button>
 
-    <ul v-if="todoList" class="px-2">
+    <ul v-if="todoList">
       <TodoItem v-for="todo in todoList" :key="todo.id" :todo />
     </ul>
     <div v-else>Fetching todo list...</div>
