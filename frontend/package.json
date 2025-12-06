@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.2.7",
+    "@vueuse/core": "^14.1.0",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3"
   },

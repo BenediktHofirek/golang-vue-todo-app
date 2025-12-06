@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, shallowRef } from 'vue';
+import Todo from './Todo.vue';
 
 const userId = 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
 
@@ -18,9 +19,7 @@ onMounted(() => {
   <div class="bg-white w-full max-w-2xl rounded-xl border border-gray-100 hover:shadow-md p-4">
     <h4 class="text-xl font-medium mb-2">Task List</h4>
     <ul v-if="todoList">
-      <li v-for="todo in todoList" :key="todo.id">
-        {{ todo.title }}
-      </li>
+      <Todo v-for="todo in todoList" :key="todo.id" :todo />
     </ul>
     <div v-else>Fetching todo list...</div>
   </div>

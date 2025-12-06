@@ -27,4 +27,6 @@ To read
 - [Standard project structure](https://github.com/golang-standards/project-layout)
 - [API project structure inspiration](https://github.com/mbvlabs/andurel)
 
+- [vueuse](https://vueuse.org/guide/)
+
 - design patterns
