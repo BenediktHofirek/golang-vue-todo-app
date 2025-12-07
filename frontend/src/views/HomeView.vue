@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import TodoList from '@/components/TodoList.vue'
+import { firebaseAuth, signInWithGooglePopup } from '@/firebase'
+import { useAuth } from '@vueuse/firebase/useAuth'
+
+const { isAuthenticated, user } = useAuth(firebaseAuth)
 </script>
 
 <template>
   <main class="flex h-full w-full">
-    <TodoList class="m-auto mt-12" />
+    Welcome home!
+    <pre v-if="isAuthenticated">{{ user }}</pre>
+    <div v-else>
+      <button @click="signInWithGooglePopup">Sign In with Google</button>
+    </div>
   </main>
 </template>

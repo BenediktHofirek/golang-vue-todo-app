@@ -11,7 +11,6 @@ Then visit [localhost:8000](http://localhost:8000) (to view database, connect to
 With inspiration from [Google tasks](https://tasks.google.com/tasks/)
 
 Todo:
-- implement tankstack query
 - complete todo list ui
 - ui basic crud
 - add auth
@@ -23,6 +22,10 @@ Todo:
 
 
 To read
+- [apiKeys](https://docs.cloud.google.com/docs/authentication/api-keys-best-practices)
+- [firebaseApiKeys](https://firebase.google.com/docs/projects/api-keys)
+- [safety](https://stackoverflow.com/questions/37482366/is-it-safe-to-expose-firebase-apikey-to-the-public)
+
 - [Best practices of structuring project](https://github.com/wangyoucao577/go-project-layout)
 - [Standard project structure](https://github.com/golang-standards/project-layout)
 - [API project structure inspiration](https://github.com/mbvlabs/andurel)
@@ -31,3 +34,4 @@ To read
 - [vueuse](https://vueuse.org/guide/)
 
 - design patterns
+- oauth

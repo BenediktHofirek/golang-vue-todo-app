@@ -38,12 +38,12 @@ repos:
       hooks:
       -   id: prettier
           name: Prettier
-          entry: sh -c 'cd frontend; pnpm prettier --write --experimental-cli || true $(for f in "$@"; do echo "${f#frontend/}"; done) || true'
+          entry: sh -c 'cd frontend; pnpm prettier --write --experimental-cli $(for f in "$@"; do echo "${f#frontend/}"; done)'
           language: system
           files: ^frontend/.*\.(vue|js|jsx|ts|tsx|css|scss|json|md|yaml)$
 
       -   id: eslint
           name: ESLint
-          entry: sh -c 'cd frontend; pnpm eslint --fix --cache || true $(for f in "$@"; do echo "${f#frontend/}"; done)'
+          entry: sh -c 'cd frontend; pnpm eslint --fix --cache $(for f in "$@"; do echo "${f#frontend/}"; done)'
           language: node
           files: ^frontend/.*\.(vue|js|jsx|ts|tsx)$
