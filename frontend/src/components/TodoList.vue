@@ -1,25 +1,67 @@
 <script setup lang="ts">
 import AddTask from '@material-symbols/svg-600/outlined/add_task.svg'
+import ArrowRight from '@material-symbols/svg-600/outlined/arrow_right.svg'
 import TodoItem from './TodoItem.vue'
-import { useQuery } from '@tanstack/vue-query'
+import { useMutationState, useQuery } from '@tanstack/vue-query'
 import { apiClient } from '@/apiClient'
+import { computed, ref } from 'vue'
+import type { Todo } from '@/models'
 
 const {
   isPending,
   isError,
+  isSuccess,
   data: todoList,
 } = useQuery({
   queryKey: ['todos'],
   queryFn: ({ signal }) => {
     return apiClient.get('/todos', {
       signal,
-    })
+    }) as Promise<Todo[]>
   },
+})
+
+const updatedTodoList = useMutationState<Todo>({
+  filters: { mutationKey: ['updateTodo'], status: 'pending' },
+  select: (mutation) => mutation.state.variables as any,
+})
+
+const todoListWithUpdates = computed(() => {
+  if (!todoList.value) return []
+
+  if (!updatedTodoList?.value.length) return todoList.value
+  const updatedTodoMap = updatedTodoList.value.reduce(
+    (acc, todo) => ({
+      ...acc,
+      [todo.id]: todo,
+    }),
+    {} as Record<number,Todo>,
+  )
+
+  console.log('inside', updatedTodoMap, todoList.value)
+  return todoList.value.map((todo) => ({
+    ...todo,
+    ...(updatedTodoMap[todo.id] || {}),
+  }))
 })
 
 function addTodo() {
   console.log('addingTodo')
 }
+
+const isClosedTodosVisible = ref(false)
+
+const openTodoList = computed(() => {
+  if (!todoList.value) return []
+
+  return todoListWithUpdates.value.filter((todo) => !todo.completed)
+})
+
+const closedTodoList = computed(() => {
+  if (!todoList.value) return []
+
+  return todoListWithUpdates.value.filter((todo) => todo.completed)
+})
 </script>
 
 <template>
@@ -48,8 +90,30 @@ function addTodo() {
     <div v-else-if="isError">
       Oh no, an error has ocurred during fetch of todo list!
     </div>
-    <ul v-else-if="todoList">
-      <TodoItem v-for="todo in todoList" :key="todo.id" :todo />
+    <ul v-else-if="isSuccess">
+      <TodoItem v-for="todo in openTodoList" :key="todo.id" :todo />
+    </ul>
+
+    <div
+      @click="isClosedTodosVisible = !isClosedTodosVisible"
+      v-if="closedTodoList.length"
+      class="flex w-full cursor-pointer items-center justify-start gap-2 p-2"
+    >
+      <ArrowRight
+        class="
+          size-10 rounded-full p-2 transition-colors
+          hover:bg-gray-100
+          active:bg-gray-200
+        "
+        :class="isClosedTodosVisible ? ['rotate-90'] : []"
+      />
+      <div class="h-min pt-0.5 text-base font-medium select-none">
+        Completed: ({{ closedTodoList.length }})
+      </div>
+    </div>
+
+    <ul v-if="closedTodoList.length && isClosedTodosVisible">
+      <TodoItem v-for="todo in closedTodoList" :key="todo.id" :todo />
     </ul>
   </div>
 </template>
