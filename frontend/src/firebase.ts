@@ -16,6 +16,10 @@ export const signInWithGooglePopup = async () => {
   return await signInWithPopup(firebaseAuth, provider)
 }
 
+export const signOutUser = async () => {
+  await firebaseAuth.signOut();
+}
+
 export const getCurrentUser = (): Promise<User | null> => {
   return new Promise((resolve) => {
     const unsubscribe = firebaseAuth.onAuthStateChanged(

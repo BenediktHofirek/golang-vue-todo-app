@@ -16,7 +16,6 @@ function toggleChecked() {
 
 <template>
   <div class="w-full py-2">
-    <div class="ml-4">Today</div>
     <div
       class="
         flex cursor-default justify-start px-4 transition-colors
