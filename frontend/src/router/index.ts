@@ -1,3 +1,4 @@
+import { getCurrentUser } from '@/firebase'
 import { createRouter, createWebHistory } from 'vue-router'
 const HomeView = () => import('../views/HomeView.vue')
 const AppView = () => import('../views/AppView.vue')
@@ -17,9 +18,21 @@ const router = createRouter({
     },
     {
       path: '/:pathMatch(.*)*',
-      redirect: { name: 'home' }
-    }
+      redirect: { name: 'home', replace: true },
+    },
   ],
+})
+
+router.beforeEach(async (to) => {
+  const user = await getCurrentUser()
+
+  if (!user && to.name !== 'home') {
+    return { name: 'home', replace: true }
+  }
+
+  if (user && to.name === 'home') {
+    return { name: 'app', replace: true }
+  }
 })
 
 export default router

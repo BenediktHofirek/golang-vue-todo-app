@@ -32,6 +32,7 @@ To read
 - [golangci-lint](https://golangci-lint.run/docs/welcome/install/)
 
 - [vueuse](https://vueuse.org/guide/)
+- [typed routes](https://uvr.esm.is/)
 
 - design patterns
 - oauth

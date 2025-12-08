@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { firebaseAuth, signInWithGooglePopup } from '@/firebase'
-import { useAuth } from '@vueuse/firebase/useAuth'
+import { signInWithGooglePopup } from '@/firebase'
+import { useRouter } from 'vue-router'
 
-const { isAuthenticated, user } = useAuth(firebaseAuth)
+const router = useRouter()
+
+async function signInWithGoogle() {
+  await signInWithGooglePopup()
+  await router.replace({ name: 'app' })
+}
 </script>
 
 <template>
   <main class="flex h-full w-full">
     Welcome home!
-    <pre v-if="isAuthenticated">{{ user }}</pre>
-    <div v-else>
-      <button @click="signInWithGooglePopup">Sign In with Google</button>
-    </div>
+    <button @click="signInWithGoogle">Sign In with Google</button>
   </main>
 </template>
