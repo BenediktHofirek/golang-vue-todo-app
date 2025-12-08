@@ -49,8 +49,6 @@ services:
       context: ./api
       dockerfile: dev.Dockerfile
     restart: unless-stopped
-    volumes:
-      - "./api:/app"
     develop:
       watch:
         - path: ./api/go.mod
@@ -71,6 +69,11 @@ services:
       - DB_CONNECTION_COUNT=${DB_CONNECTION_COUNT}
       # SERVER
       - API_PORT=${API_PORT}
+      - PROJECT_ID=${PROJECT_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+    volumes:
+      - "./api:/app"
+      - $HOME/.config/gcloud/application_default_credentials.json:/app/gcp-credentials.json:ro
     depends_on:
       db:
         condition: service_healthy

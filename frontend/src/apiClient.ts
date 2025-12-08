@@ -1,5 +1,5 @@
 import axios from 'axios'
-// import { auth } from '@/firebase/config'; // Assume you export firebase auth here
+import { getCurrentUser } from './firebase'
 
 export const apiClient = axios.create({
   baseURL: '/api/v1',
@@ -16,19 +16,14 @@ apiClient.interceptors.response.use(
 )
 
 // REQUEST Interceptor for Auth Token
-// apiClient.interceptors.request.use(async (config) => {
-//   const user = auth.currentUser;
-//   if (user) {
-//     const token = await user.getIdToken();
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// }, (error) => {
-//   return Promise.reject(error);
-// });
-//
-// // RESPONSE Interceptor (optional, for returning data directly)
-// apiClient.interceptors.response.use(
-//     (response) => response.data,
-//     (error) => Promise.reject(error)
-// );
+apiClient.interceptors.request.use(async (config) => {
+  const user = await getCurrentUser();
+
+  if (user) {
+    const token = await user.getIdToken();
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});

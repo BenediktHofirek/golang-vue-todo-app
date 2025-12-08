@@ -4,8 +4,6 @@ import TodoItem from './TodoItem.vue'
 import { useQuery } from '@tanstack/vue-query'
 import { apiClient } from '@/apiClient'
 
-const userId = 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
-
 const {
   isPending,
   isError,
@@ -13,7 +11,7 @@ const {
 } = useQuery({
   queryKey: ['todos'],
   queryFn: ({ signal }) => {
-    return apiClient.get(`/todos/${userId}`, {
+    return apiClient.get('/todos', {
       signal,
     })
   },
