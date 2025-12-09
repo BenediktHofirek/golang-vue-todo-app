@@ -11,7 +11,7 @@ import (
 type Todo struct {
 	ID            int64              `json:"id"`
 	UserID        string             `json:"userId"`
-	Title         string             `json:"title"`
+	Title         *string            `json:"title"`
 	Description   *string            `json:"description"`
 	Completed     bool               `json:"completed"`
 	DueDate       pgtype.Timestamptz `json:"dueDate"`

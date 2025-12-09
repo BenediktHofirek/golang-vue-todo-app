@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/BenediktHofirek/golang-vue-todo-app/db"
@@ -14,7 +15,7 @@ import (
 func (s *Server) getTodos(c *gin.Context) {
 	token := GetUserAuthToken(c)
 
-	todos, err := s.queries.Todo_GetManyByUserId(c.Request.Context(), token.UID)
+	todos, err := s.queries.Todo_GetMany(c.Request.Context(), token.UID)
 	if err != nil {
 		ResponseInternalServerError(c, err)
 		return
@@ -52,42 +53,6 @@ func (s *Server) getTodoById(c *gin.Context) {
 	ResponseOk(c, todo)
 }
 
-type CreateTodoDto struct {
-	Title         string     `json:"title" binding:"required"`
-	Description   *string    `json:"description"`
-	Completed     bool       `json:"completed" binding:"boolean"`
-	DueDate       *time.Time `json:"due_date" binding:"gt=now"`
-	Starred       bool       `json:"starred" binding:"boolean"`
-	ScheduledDate *time.Time `json:"scheduled_date"`
-}
-
-func (s *Server) createTodo(c *gin.Context) {
-	var dto CreateTodoDto
-
-	if err := c.ShouldBind(&dto); err != nil {
-		ResponseBadRequest(c, err)
-		return
-	}
-
-	token := GetUserAuthToken(c)
-
-	todo, err := s.queries.Todo_CreateOne(c.Request.Context(), db.Todo_CreateOneParams{
-		UserID:        token.UID,
-		Title:         dto.Title,
-		Description:   dto.Description,
-		Completed:     dto.Completed,
-		DueDate:       toTimestamptz(dto.DueDate),
-		Starred:       dto.Starred,
-		ScheduledDate: toTimestamptz(dto.ScheduledDate),
-	})
-	if err != nil {
-		ResponseInternalServerError(c, err)
-		return
-	}
-
-	ResponseOk(c, todo)
-}
-
 func (s *Server) deleteTodo(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -116,9 +81,21 @@ func (s *Server) deleteTodo(c *gin.Context) {
 	ResponseNoContent(c)
 }
 
+func (s *Server) createBlankTodo(c *gin.Context) {
+	token := GetUserAuthToken(c)
+
+	todoId, err := s.queries.Todo_CreateBlank(c.Request.Context(), token.UID)
+	if err != nil {
+		ResponseInternalServerError(c, err)
+		return
+	}
+
+	ResponseCreated(c, todoId)
+}
+
 type UpdateTodoDto struct {
-	Title         *string    `json:"title"`
-	Description   *string    `json:"description"`
+	Title         *string    `json:"title" binding:"omitempty"`
+	Description   *string    `json:"description" binding:"omitempty"`
 	Completed     *bool      `json:"completed" binding:"omitempty,boolean"`
 	DueDate       *time.Time `json:"due_date" binding:"omitempty,gt=now"`
 	Starred       *bool      `json:"starred" binding:"omitempty,boolean"`
@@ -137,6 +114,16 @@ func (s *Server) updateTodo(c *gin.Context) {
 	if err := c.ShouldBind(&dto); err != nil {
 		ResponseBadRequest(c, err)
 		return
+	}
+
+	if dto.Title != nil {
+		trimmedTitle := strings.TrimSpace(*dto.Title)
+		dto.Title = &trimmedTitle
+	}
+
+	if dto.Description != nil {
+		trimmedDescription := strings.TrimSpace(*dto.Description)
+		dto.Description = &trimmedDescription
 	}
 
 	token := GetUserAuthToken(c)

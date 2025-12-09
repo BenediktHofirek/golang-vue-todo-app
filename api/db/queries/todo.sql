@@ -1,20 +1,45 @@
--- name: Todo_CreateOne :one
-INSERT INTO todos (
-  user_id,
-  title,
-  description,
-  completed,
-  due_date,
-  starred,
-  scheduled_date
+-- name: Todo_CreateBlank :one
+WITH existing_blank AS (
+  SELECT
+    id
+  FROM
+    todos
+  WHERE
+    todos.user_id = @user_id
+    AND title IS NULL
+    AND description IS NULL
+    AND due_date IS NULL
+    AND scheduled_date IS NULL
+    AND completed = FALSE
+    AND starred = FALSE
+  LIMIT
+    1
+), inserted AS (
+  INSERT INTO
+    todos (user_id)
+  SELECT
+    @user_id
+  WHERE
+    NOT EXISTS (
+      SELECT
+        1
+      FROM
+        existing_blank
+    ) RETURNING id
 )
-VALUES (@user_id, @title, @description, @completed, @due_date, @starred, @scheduled_date)
-RETURNING *;
+SELECT
+  id
+FROM
+  existing_blank
+UNION ALL
+SELECT
+  id
+FROM
+  inserted;
 
 -- name: Todo_GetOneById :one
 SELECT
   id,
-  user_id,
   title,
   description,
   completed,
@@ -27,10 +52,9 @@ FROM todos
 WHERE id = @id
 AND user_id = @user_id;
 
--- name: Todo_GetManyByUserId :many
+-- name: Todo_GetMany :many
 SELECT
   id,
-  user_id,
   title,
   description,
   completed,

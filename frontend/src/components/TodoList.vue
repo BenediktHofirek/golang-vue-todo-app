@@ -2,10 +2,16 @@
 import AddTask from '@material-symbols/svg-600/outlined/add_task.svg'
 import ArrowRight from '@material-symbols/svg-600/outlined/arrow_right.svg'
 import TodoItem from './TodoItem.vue'
-import { useMutationState, useQuery } from '@tanstack/vue-query'
-import { apiClient } from '@/apiClient'
+import {
+  useMutation,
+  useMutationState,
+  useQuery,
+} from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import type { Todo } from '@/models'
+import { NEW_TODO_TEMP_ID } from '@/constants'
+import { isTodoBlank } from '@/utils'
+import { api } from '@/apiClient'
 
 const {
   isPending,
@@ -14,21 +20,19 @@ const {
   data: todoList,
 } = useQuery({
   queryKey: ['todos'],
-  queryFn: ({ signal }) => {
-    return apiClient.get('/todos', {
-      signal,
-    }) as Promise<Todo[]>
-  },
+  queryFn: api.getTodoList,
 })
 
-const updatedTodoList = useMutationState<Todo>({
+const editedTodoId = ref<number | null>(null)
+
+const updatedTodoList = useMutationState({
   filters: { mutationKey: ['updateTodo'], status: 'pending' },
-  select: (mutation) => mutation.state.variables as any,
+  select: (mutation) => mutation.state.variables as Todo,
 })
 
-const deletedTodoList = useMutationState<number>({
+const deletedTodoList = useMutationState({
   filters: { mutationKey: ['deleteTodo'], status: 'pending' },
-  select: (mutation) => mutation.state.variables as any,
+  select: (mutation) => mutation.state.variables as number,
 })
 
 const todoListWithUpdates = computed(() => {
@@ -52,9 +56,56 @@ const todoListWithUpdates = computed(() => {
     }))
 })
 
-function addTodo() {
-  console.log('addingTodo')
-}
+const { mutate: saveNewTodo } = useMutation({
+  mutationFn: api.updateTodo,
+  mutationKey: ['updateTodo'],
+})
+
+const { mutate: addTodo } = useMutation({
+  mutationFn: api.createBlankTodo,
+  onMutate: async (_, context) => {
+    await context.client.cancelQueries({ queryKey: ['todos'] })
+    const existingBlankTodo = (
+      context.client.getQueryData(['todos']) as Todo[]
+    ).find((todo) => isTodoBlank(todo))
+
+    if (existingBlankTodo) return
+    const blankTodo = {
+      id: NEW_TODO_TEMP_ID,
+      title: null,
+      description: null,
+      completed: false,
+      dueDate: null,
+      starred: false,
+      scheduledDate: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    await context.client.setQueryData(['todos'], (old: Todo[]) =>
+      old.concat(blankTodo),
+    )
+    editedTodoId.value = NEW_TODO_TEMP_ID
+  },
+  onSuccess: async (newTodoId, _variables, _onMutateResult, context) => {
+    await context.client.setQueryData(['todos'], (old: Todo[]) =>
+      old.map((todo) => {
+        if (todo.id !== NEW_TODO_TEMP_ID) return todo
+        return {
+          ...todo,
+          id: newTodoId,
+        }
+      }),
+    )
+
+    const newTodo = (context.client.getQueryData(['todos']) as Todo[]).find(
+      (todo) => {
+        return todo.id === newTodoId
+      },
+    )
+    if (!newTodo) return
+    saveNewTodo(newTodo)
+  },
+})
 
 const isClosedTodosVisible = ref(false)
 
@@ -98,7 +149,12 @@ const closedTodoList = computed(() => {
       Oh no, an error has ocurred during fetch of todo list!
     </div>
     <ul v-else-if="isSuccess">
-      <TodoItem v-for="todo in openTodoList" :key="todo.id" :todo />
+      <TodoItem
+        v-for="todo in openTodoList"
+        :key="todo.id"
+        :todo
+        :isEdited="editedTodoId === todo.id"
+      />
     </ul>
 
     <div
@@ -120,7 +176,12 @@ const closedTodoList = computed(() => {
     </div>
 
     <ul v-if="closedTodoList.length && isClosedTodosVisible">
-      <TodoItem v-for="todo in closedTodoList" :key="todo.id" :todo />
+      <TodoItem
+        v-for="todo in closedTodoList"
+        :key="todo.id"
+        :todo
+        :isEdited="editedTodoId === todo.id"
+      />
     </ul>
   </div>
 </template>

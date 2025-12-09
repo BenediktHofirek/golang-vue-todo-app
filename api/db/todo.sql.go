@@ -11,54 +11,51 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const todo_CreateOne = `-- name: Todo_CreateOne :one
-INSERT INTO todos (
-  user_id,
-  title,
-  description,
-  completed,
-  due_date,
-  starred,
-  scheduled_date
+const todo_CreateBlank = `-- name: Todo_CreateBlank :one
+WITH existing_blank AS (
+  SELECT
+    id
+  FROM
+    todos
+  WHERE
+    todos.user_id = $1
+    AND title IS NULL
+    AND description IS NULL
+    AND due_date IS NULL
+    AND scheduled_date IS NULL
+    AND completed = FALSE
+    AND starred = FALSE
+  LIMIT
+    1
+), inserted AS (
+  INSERT INTO
+    todos (user_id)
+  SELECT
+    $1
+  WHERE
+    NOT EXISTS (
+      SELECT
+        1
+      FROM
+        existing_blank
+    ) RETURNING id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, user_id, title, description, completed, due_date, created_at, updated_at, starred, scheduled_date
+SELECT
+  id
+FROM
+  existing_blank
+UNION ALL
+SELECT
+  id
+FROM
+  inserted
 `
 
-type Todo_CreateOneParams struct {
-	UserID        string             `json:"userId"`
-	Title         string             `json:"title"`
-	Description   *string            `json:"description"`
-	Completed     bool               `json:"completed"`
-	DueDate       pgtype.Timestamptz `json:"dueDate"`
-	Starred       bool               `json:"starred"`
-	ScheduledDate pgtype.Timestamptz `json:"scheduledDate"`
-}
-
-func (q *Queries) Todo_CreateOne(ctx context.Context, arg Todo_CreateOneParams) (Todo, error) {
-	row := q.db.QueryRow(ctx, todo_CreateOne,
-		arg.UserID,
-		arg.Title,
-		arg.Description,
-		arg.Completed,
-		arg.DueDate,
-		arg.Starred,
-		arg.ScheduledDate,
-	)
-	var i Todo
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Title,
-		&i.Description,
-		&i.Completed,
-		&i.DueDate,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Starred,
-		&i.ScheduledDate,
-	)
-	return i, err
+func (q *Queries) Todo_CreateBlank(ctx context.Context, userID string) (int64, error) {
+	row := q.db.QueryRow(ctx, todo_CreateBlank, userID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const todo_DeleteOne = `-- name: Todo_DeleteOne :exec
@@ -77,10 +74,9 @@ func (q *Queries) Todo_DeleteOne(ctx context.Context, arg Todo_DeleteOneParams) 
 	return err
 }
 
-const todo_GetManyByUserId = `-- name: Todo_GetManyByUserId :many
+const todo_GetMany = `-- name: Todo_GetMany :many
 SELECT
   id,
-  user_id,
   title,
   description,
   completed,
@@ -94,10 +90,9 @@ WHERE user_id = $1
 ORDER BY id
 `
 
-type Todo_GetManyByUserIdRow struct {
+type Todo_GetManyRow struct {
 	ID            int64              `json:"id"`
-	UserID        string             `json:"userId"`
-	Title         string             `json:"title"`
+	Title         *string            `json:"title"`
 	Description   *string            `json:"description"`
 	Completed     bool               `json:"completed"`
 	DueDate       pgtype.Timestamptz `json:"dueDate"`
@@ -107,18 +102,17 @@ type Todo_GetManyByUserIdRow struct {
 	UpdatedAt     pgtype.Timestamptz `json:"updatedAt"`
 }
 
-func (q *Queries) Todo_GetManyByUserId(ctx context.Context, userID string) ([]Todo_GetManyByUserIdRow, error) {
-	rows, err := q.db.Query(ctx, todo_GetManyByUserId, userID)
+func (q *Queries) Todo_GetMany(ctx context.Context, userID string) ([]Todo_GetManyRow, error) {
+	rows, err := q.db.Query(ctx, todo_GetMany, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Todo_GetManyByUserIdRow
+	var items []Todo_GetManyRow
 	for rows.Next() {
-		var i Todo_GetManyByUserIdRow
+		var i Todo_GetManyRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
 			&i.Title,
 			&i.Description,
 			&i.Completed,
@@ -141,7 +135,6 @@ func (q *Queries) Todo_GetManyByUserId(ctx context.Context, userID string) ([]To
 const todo_GetOneById = `-- name: Todo_GetOneById :one
 SELECT
   id,
-  user_id,
   title,
   description,
   completed,
@@ -162,8 +155,7 @@ type Todo_GetOneByIdParams struct {
 
 type Todo_GetOneByIdRow struct {
 	ID            int64              `json:"id"`
-	UserID        string             `json:"userId"`
-	Title         string             `json:"title"`
+	Title         *string            `json:"title"`
 	Description   *string            `json:"description"`
 	Completed     bool               `json:"completed"`
 	DueDate       pgtype.Timestamptz `json:"dueDate"`
@@ -178,7 +170,6 @@ func (q *Queries) Todo_GetOneById(ctx context.Context, arg Todo_GetOneByIdParams
 	var i Todo_GetOneByIdRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
 		&i.Title,
 		&i.Description,
 		&i.Completed,

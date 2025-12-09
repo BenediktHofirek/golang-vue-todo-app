@@ -7,7 +7,7 @@ func (s *Server) setupRoutes() {
 	{
 		v1.GET("/todos", s.getTodos)
 		v1.GET("/todos/:id", s.getTodoById)
-		v1.POST("/todos", s.createTodo)
+		v1.POST("/todos/create-blank", s.createBlankTodo)
 		v1.PATCH("/todos/:id", s.updateTodo)
 		v1.DELETE("/todos/:id", s.deleteTodo)
 	}

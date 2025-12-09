@@ -20,6 +20,10 @@ func ResponseNoContent(c *gin.Context) {
   c.JSON(http.StatusNoContent, gin.H{})
 }
 
+func ResponseCreated(c *gin.Context, data any) {
+  c.JSON(http.StatusCreated, data)
+}
+
 func ResponseBadRequest(c *gin.Context, err error) {
   c.JSON(http.StatusBadRequest, APIResponse{
     Code:    http.StatusBadRequest,
