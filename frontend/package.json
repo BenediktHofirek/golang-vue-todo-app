@@ -21,6 +21,7 @@
     "@fontsource-variable/nunito-sans": "^5.2.7",
     "@material-symbols/svg-400": "^0.40.0",
     "@material-symbols/svg-600": "^0.40.0",
+    "@material-symbols/svg-700": "^0.40.1",
     "@tanstack/vue-query": "^5.92.0",
     "@tanstack/vue-query-devtools": "^6.1.2",
     "@vueuse/core": "^14.1.0",

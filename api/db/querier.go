@@ -11,8 +11,8 @@ import (
 type Querier interface {
 	Todo_CreateOne(ctx context.Context, arg Todo_CreateOneParams) (Todo, error)
 	Todo_DeleteOne(ctx context.Context, arg Todo_DeleteOneParams) error
-	Todo_GetManyByUserId(ctx context.Context, userID string) ([]Todo, error)
-	Todo_GetOneById(ctx context.Context, arg Todo_GetOneByIdParams) (Todo, error)
+	Todo_GetManyByUserId(ctx context.Context, userID string) ([]Todo_GetManyByUserIdRow, error)
+	Todo_GetOneById(ctx context.Context, arg Todo_GetOneByIdParams) (Todo_GetOneByIdRow, error)
 	Todo_UpdateOne(ctx context.Context, arg Todo_UpdateOneParams) (Todo, error)
 }
 

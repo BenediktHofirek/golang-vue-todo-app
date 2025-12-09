@@ -53,10 +53,12 @@ func (s *Server) getTodoById(c *gin.Context) {
 }
 
 type CreateTodoDto struct {
-	Title       string     `json:"title" binding:"required"`
-	Description *string    `json:"description"`
-	Completed   bool       `json:"completed" binding:"boolean"`
-	DueDate     *time.Time `json:"due_date" binding:"gt=now"`
+	Title         string     `json:"title" binding:"required"`
+	Description   *string    `json:"description"`
+	Completed     bool       `json:"completed" binding:"boolean"`
+	DueDate       *time.Time `json:"due_date" binding:"gt=now"`
+	Starred       bool       `json:"starred" binding:"boolean"`
+	ScheduledDate *time.Time `json:"scheduled_date"`
 }
 
 func (s *Server) createTodo(c *gin.Context) {
@@ -70,11 +72,13 @@ func (s *Server) createTodo(c *gin.Context) {
 	token := GetUserAuthToken(c)
 
 	todo, err := s.queries.Todo_CreateOne(c.Request.Context(), db.Todo_CreateOneParams{
-		UserID:      token.UID,
-		Title:       dto.Title,
-		Description: dto.Description,
-		Completed:   dto.Completed,
-		DueDate:     toTimestamptz(dto.DueDate),
+		UserID:        token.UID,
+		Title:         dto.Title,
+		Description:   dto.Description,
+		Completed:     dto.Completed,
+		DueDate:       toTimestamptz(dto.DueDate),
+		Starred:       dto.Starred,
+		ScheduledDate: toTimestamptz(dto.ScheduledDate),
 	})
 	if err != nil {
 		ResponseInternalServerError(c, err)
@@ -113,10 +117,12 @@ func (s *Server) deleteTodo(c *gin.Context) {
 }
 
 type UpdateTodoDto struct {
-	Title       *string    `json:"title"`
-	Description *string    `json:"description"`
-	Completed   *bool      `json:"completed" binding:"omitempty,boolean"`
-	DueDate     *time.Time `json:"due_date" binding:"omitempty,gt=now"`
+	Title         *string    `json:"title"`
+	Description   *string    `json:"description"`
+	Completed     *bool      `json:"completed" binding:"omitempty,boolean"`
+	DueDate       *time.Time `json:"due_date" binding:"omitempty,gt=now"`
+	Starred       *bool      `json:"starred" binding:"omitempty,boolean"`
+	ScheduledDate *time.Time `json:"scheduled_date" binding:"omitempty"`
 }
 
 func (s *Server) updateTodo(c *gin.Context) {
@@ -136,12 +142,14 @@ func (s *Server) updateTodo(c *gin.Context) {
 	token := GetUserAuthToken(c)
 
 	todo, err := s.queries.Todo_UpdateOne(c.Request.Context(), db.Todo_UpdateOneParams{
-		ID:          id,
-		UserID:      token.UID,
-		Title:       dto.Title,
-		Description: dto.Description,
-		Completed:   dto.Completed,
-		DueDate:     toTimestamptz(dto.DueDate),
+		ID:            id,
+		UserID:        token.UID,
+		Title:         dto.Title,
+		Description:   dto.Description,
+		Completed:     dto.Completed,
+		DueDate:       toTimestamptz(dto.DueDate),
+		Starred:       dto.Starred,
+		ScheduledDate: toTimestamptz(dto.ScheduledDate),
 	})
 
 	if err != nil {

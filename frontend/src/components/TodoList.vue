@@ -26,23 +26,30 @@ const updatedTodoList = useMutationState<Todo>({
   select: (mutation) => mutation.state.variables as any,
 })
 
+const deletedTodoList = useMutationState<number>({
+  filters: { mutationKey: ['deleteTodo'], status: 'pending' },
+  select: (mutation) => mutation.state.variables as any,
+})
+
 const todoListWithUpdates = computed(() => {
   if (!todoList.value) return []
 
-  if (!updatedTodoList?.value.length) return todoList.value
   const updatedTodoMap = updatedTodoList.value.reduce(
     (acc, todo) => ({
       ...acc,
       [todo.id]: todo,
     }),
-    {} as Record<number,Todo>,
+    {} as Record<number, Todo>,
   )
 
-  console.log('inside', updatedTodoMap, todoList.value)
-  return todoList.value.map((todo) => ({
-    ...todo,
-    ...(updatedTodoMap[todo.id] || {}),
-  }))
+  return todoList.value
+    .filter((todo) => {
+      return !deletedTodoList.value.includes(todo.id)
+    })
+    .map((todo) => ({
+      ...todo,
+      ...(updatedTodoMap[todo.id] || {}),
+    }))
 })
 
 function addTodo() {

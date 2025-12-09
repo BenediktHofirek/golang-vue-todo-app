@@ -17,6 +17,9 @@ importers:
       '@material-symbols/svg-600':
         specifier: ^0.40.0
         version: 0.40.0
+      '@material-symbols/svg-700':
+        specifier: ^0.40.1
+        version: 0.40.1
       '@tanstack/vue-query':
         specifier: ^5.92.0
         version: 5.92.0(vue@3.5.25(typescript@5.9.3))
@@ -570,6 +573,9 @@ packages:
 
   '@material-symbols/svg-600@0.40.0':
     resolution: {integrity: sha512-NohXl/09XdvnapZegi+DAO+D8ThdWX2LerlH7+MbFXY3gzRueLGJtHC1TG3KQ8tB2k5a3XBrmI+PmHveugXflA==}
+
+  '@material-symbols/svg-700@0.40.1':
+    resolution: {integrity: sha512-++KDwuoMiTtYmkrpHqe8xsHf00gJColc+QxxvCnqzUh4qmrMYL7Y1OAeOFkNRBJ0rFPTJEIp7dkKlCe2BL27rw==}
 
   '@napi-rs/wasm-runtime@1.1.0':
     resolution: {integrity: sha512-Fq6DJW+Bb5jaWE69/qOE0D1TUN9+6uWhCeZpdnSBk14pjLcCWR7Q8n49PTSPHazM37JqrsdpEthXy2xn6jWWiA==}
@@ -3107,6 +3113,8 @@ snapshots:
   '@material-symbols/svg-400@0.40.0': {}
 
   '@material-symbols/svg-600@0.40.0': {}
+
+  '@material-symbols/svg-700@0.40.1': {}
 
   '@napi-rs/wasm-runtime@1.1.0':
     dependencies:

@@ -17,18 +17,22 @@ INSERT INTO todos (
   title,
   description,
   completed,
-  due_date
+  due_date,
+  starred,
+  scheduled_date
 )
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, user_id, title, description, completed, due_date, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, user_id, title, description, completed, due_date, created_at, updated_at, starred, scheduled_date
 `
 
 type Todo_CreateOneParams struct {
-	UserID      string             `json:"userId"`
-	Title       string             `json:"title"`
-	Description *string            `json:"description"`
-	Completed   bool               `json:"completed"`
-	DueDate     pgtype.Timestamptz `json:"dueDate"`
+	UserID        string             `json:"userId"`
+	Title         string             `json:"title"`
+	Description   *string            `json:"description"`
+	Completed     bool               `json:"completed"`
+	DueDate       pgtype.Timestamptz `json:"dueDate"`
+	Starred       bool               `json:"starred"`
+	ScheduledDate pgtype.Timestamptz `json:"scheduledDate"`
 }
 
 func (q *Queries) Todo_CreateOne(ctx context.Context, arg Todo_CreateOneParams) (Todo, error) {
@@ -38,6 +42,8 @@ func (q *Queries) Todo_CreateOne(ctx context.Context, arg Todo_CreateOneParams) 
 		arg.Description,
 		arg.Completed,
 		arg.DueDate,
+		arg.Starred,
+		arg.ScheduledDate,
 	)
 	var i Todo
 	err := row.Scan(
@@ -49,6 +55,8 @@ func (q *Queries) Todo_CreateOne(ctx context.Context, arg Todo_CreateOneParams) 
 		&i.DueDate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Starred,
+		&i.ScheduledDate,
 	)
 	return i, err
 }
@@ -77,6 +85,8 @@ SELECT
   description,
   completed,
   due_date,
+  starred,
+  scheduled_date,
   created_at,
   updated_at
 FROM todos
@@ -84,15 +94,28 @@ WHERE user_id = $1
 ORDER BY id
 `
 
-func (q *Queries) Todo_GetManyByUserId(ctx context.Context, userID string) ([]Todo, error) {
+type Todo_GetManyByUserIdRow struct {
+	ID            int64              `json:"id"`
+	UserID        string             `json:"userId"`
+	Title         string             `json:"title"`
+	Description   *string            `json:"description"`
+	Completed     bool               `json:"completed"`
+	DueDate       pgtype.Timestamptz `json:"dueDate"`
+	Starred       bool               `json:"starred"`
+	ScheduledDate pgtype.Timestamptz `json:"scheduledDate"`
+	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt     pgtype.Timestamptz `json:"updatedAt"`
+}
+
+func (q *Queries) Todo_GetManyByUserId(ctx context.Context, userID string) ([]Todo_GetManyByUserIdRow, error) {
 	rows, err := q.db.Query(ctx, todo_GetManyByUserId, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Todo
+	var items []Todo_GetManyByUserIdRow
 	for rows.Next() {
-		var i Todo
+		var i Todo_GetManyByUserIdRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -100,6 +123,8 @@ func (q *Queries) Todo_GetManyByUserId(ctx context.Context, userID string) ([]To
 			&i.Description,
 			&i.Completed,
 			&i.DueDate,
+			&i.Starred,
+			&i.ScheduledDate,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -121,6 +146,8 @@ SELECT
   description,
   completed,
   due_date,
+  starred,
+  scheduled_date,
   created_at,
   updated_at
 FROM todos
@@ -133,9 +160,22 @@ type Todo_GetOneByIdParams struct {
 	UserID string `json:"userId"`
 }
 
-func (q *Queries) Todo_GetOneById(ctx context.Context, arg Todo_GetOneByIdParams) (Todo, error) {
+type Todo_GetOneByIdRow struct {
+	ID            int64              `json:"id"`
+	UserID        string             `json:"userId"`
+	Title         string             `json:"title"`
+	Description   *string            `json:"description"`
+	Completed     bool               `json:"completed"`
+	DueDate       pgtype.Timestamptz `json:"dueDate"`
+	Starred       bool               `json:"starred"`
+	ScheduledDate pgtype.Timestamptz `json:"scheduledDate"`
+	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt     pgtype.Timestamptz `json:"updatedAt"`
+}
+
+func (q *Queries) Todo_GetOneById(ctx context.Context, arg Todo_GetOneByIdParams) (Todo_GetOneByIdRow, error) {
 	row := q.db.QueryRow(ctx, todo_GetOneById, arg.ID, arg.UserID)
-	var i Todo
+	var i Todo_GetOneByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -143,6 +183,8 @@ func (q *Queries) Todo_GetOneById(ctx context.Context, arg Todo_GetOneByIdParams
 		&i.Description,
 		&i.Completed,
 		&i.DueDate,
+		&i.Starred,
+		&i.ScheduledDate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -154,19 +196,23 @@ UPDATE todos
 SET title = COALESCE($1, title),
     description = COALESCE($2, description),
     completed = COALESCE($3, completed), 
-    due_date = COALESCE($4, due_date)
-WHERE id = $5
-AND user_id = $6
-RETURNING id, user_id, title, description, completed, due_date, created_at, updated_at
+    due_date = COALESCE($4, due_date),
+    starred = COALESCE($5, starred), 
+    scheduled_date = COALESCE($6, scheduled_date)
+WHERE id = $7
+AND user_id = $8
+RETURNING id, user_id, title, description, completed, due_date, created_at, updated_at, starred, scheduled_date
 `
 
 type Todo_UpdateOneParams struct {
-	Title       *string            `json:"title"`
-	Description *string            `json:"description"`
-	Completed   *bool              `json:"completed"`
-	DueDate     pgtype.Timestamptz `json:"dueDate"`
-	ID          int64              `json:"id"`
-	UserID      string             `json:"userId"`
+	Title         *string            `json:"title"`
+	Description   *string            `json:"description"`
+	Completed     *bool              `json:"completed"`
+	DueDate       pgtype.Timestamptz `json:"dueDate"`
+	Starred       *bool              `json:"starred"`
+	ScheduledDate pgtype.Timestamptz `json:"scheduledDate"`
+	ID            int64              `json:"id"`
+	UserID        string             `json:"userId"`
 }
 
 func (q *Queries) Todo_UpdateOne(ctx context.Context, arg Todo_UpdateOneParams) (Todo, error) {
@@ -175,6 +221,8 @@ func (q *Queries) Todo_UpdateOne(ctx context.Context, arg Todo_UpdateOneParams) 
 		arg.Description,
 		arg.Completed,
 		arg.DueDate,
+		arg.Starred,
+		arg.ScheduledDate,
 		arg.ID,
 		arg.UserID,
 	)
@@ -188,6 +236,8 @@ func (q *Queries) Todo_UpdateOne(ctx context.Context, arg Todo_UpdateOneParams) 
 		&i.DueDate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Starred,
+		&i.ScheduledDate,
 	)
 	return i, err
 }

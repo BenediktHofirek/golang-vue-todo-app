@@ -4,9 +4,11 @@ INSERT INTO todos (
   title,
   description,
   completed,
-  due_date
+  due_date,
+  starred,
+  scheduled_date
 )
-VALUES (@user_id, @title, @description, @completed, @due_date)
+VALUES (@user_id, @title, @description, @completed, @due_date, @starred, @scheduled_date)
 RETURNING *;
 
 -- name: Todo_GetOneById :one
@@ -17,6 +19,8 @@ SELECT
   description,
   completed,
   due_date,
+  starred,
+  scheduled_date,
   created_at,
   updated_at
 FROM todos
@@ -31,6 +35,8 @@ SELECT
   description,
   completed,
   due_date,
+  starred,
+  scheduled_date,
   created_at,
   updated_at
 FROM todos
@@ -42,7 +48,9 @@ UPDATE todos
 SET title = COALESCE(sqlc.narg('title'), title),
     description = COALESCE(sqlc.narg('description'), description),
     completed = COALESCE(sqlc.narg('completed'), completed), 
-    due_date = COALESCE(sqlc.narg('due_date'), due_date)
+    due_date = COALESCE(sqlc.narg('due_date'), due_date),
+    starred = COALESCE(sqlc.narg('starred'), starred), 
+    scheduled_date = COALESCE(sqlc.narg('scheduled_date'), scheduled_date)
 WHERE id = @id
 AND user_id = @user_id
 RETURNING *;

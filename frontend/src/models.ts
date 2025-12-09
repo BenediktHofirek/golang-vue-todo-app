@@ -5,6 +5,8 @@ export interface Todo {
   description: string | null
   completed: boolean
   dueDate: string | null
+  starred: boolean
+  scheduledDate: string | null
   createdAt: string
   updatedAt: string
 }
