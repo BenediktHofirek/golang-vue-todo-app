@@ -115,31 +115,6 @@ services:
     networks:
       - internal_net
 
-  db_seeder:
-    container_name: db_seeder
-    image: postgres:latest
-    volumes:
-      - "./api/db/seeds:/app/seeds"
-    depends_on:
-      db:
-        condition: service_healthy
-      db_migrator:
-        condition: service_completed_successfully
-    command: |-
-      /bin/sh -c '
-      echo "Running all seed scripts from /app/seeds...";
-      find /app/seeds -maxdepth 1 -name "*.sql" -exec /bin/sh -c "psql -f \"{}\" || exit 1" \;
-      echo "Database seeding complete.";
-      '
-    environment:
-      # Psql client automatically reads these variables:
-      PGHOST: db
-      PGUSER: ${DB_USER}
-      PGPASSWORD: ${DB_PASSWORD}
-      PGDATABASE: ${DB_NAME}
-    networks:
-      - internal_net
-
 volumes:
   postgres_data:
     driver: local

@@ -8,7 +8,7 @@ import StarFilled from '@material-symbols/svg-600/rounded/star-fill.svg'
 import Check from '@material-symbols/svg-600/rounded/check.svg'
 import { useMutation } from '@tanstack/vue-query'
 import { api } from '@/apiClient'
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { onClickOutside, watchDebounced } from '@vueuse/core'
 
 const props = defineProps<{
@@ -40,14 +40,19 @@ const { mutate: updateTodo } = useMutation({
 })
 
 const formRef = useTemplateRef('formRef')
+const titleInputRef = useTemplateRef('titleInputRef')
+const descriptionInputRef = useTemplateRef('descriptionInputRef')
 
 onClickOutside(formRef, () => {
+  if (!isEdited.value) return
+
   if (
-    !isEdited.value ||
-    (title.value === props.todo.title &&
-      description.value === props.todo.description)
-  )
+    title.value === props.todo.title &&
+    description.value === props.todo.description
+  ) {
+    isEdited.value = false
     return
+  }
 
   updateTodo({
     id: props.todo.id,
@@ -88,17 +93,37 @@ function toggleStarred(todo: Todo) {
     starred: !todo.starred,
   })
 }
+
+async function handleClickTitle() {
+  if (isEdited.value) return
+
+  isEdited.value = true
+  await nextTick()
+  titleInputRef.value?.select()
+}
+
+async function handleClickDescription() {
+  if (isEdited.value) return
+
+  isEdited.value = true
+  await nextTick()
+  descriptionInputRef.value?.select()
+}
+
+function handleClickContainer() {
+  handleClickTitle()
+}
 </script>
 
 <template>
   <div class="
     group w-full py-2
     hover:bg-blue-50
-  " @click="isEdited = true">
+  " @click="handleClickContainer">
     <div class="flex cursor-default justify-start px-4 transition-colors">
       <div
-        class="mt-1 mr-4 size-6 cursor-pointer overflow-hidden rounded-full"
-        @click.once="toggleCompleted(todo)"
+        class="mt-1.5 mr-4 size-6 cursor-pointer overflow-hidden rounded-full"
+        @click.once.stop="toggleCompleted(todo)"
       >
         <Check
           v-if="todo.completed"
@@ -125,6 +150,7 @@ function toggleStarred(todo: Todo) {
           <input
             v-if="isEdited"
             v-model.trim="title"
+            ref="titleInputRef"
             class="
               w-full text-base placeholder-gray-500
               focus:outline-none
@@ -133,7 +159,8 @@ function toggleStarred(todo: Todo) {
           />
           <div
             v-else
-            class="text-base text-ellipsis"
+            class="flex-1 text-base text-ellipsis"
+            @click.stop="handleClickTitle"
             :class="todo.completed ? 'line-through' : ''"
           >
             {{ todo.title }}
@@ -188,13 +215,31 @@ function toggleStarred(todo: Todo) {
           :rows="descriptionRowCount"
           v-model="description"
           placeholder="Detail"
+          ref="descriptionInputRef"
           class="
             w-full resize-none text-sm placeholder-gray-500
             focus:outline-none
           "
         ></textarea>
-        <p v-else class="text-sm">{{ todo.description }}</p>
+        <p
+          v-else
+          @click.stop="handleClickDescription"
+          class="text-sm whitespace-pre-wrap"
+        >
+          {{ todo.description }}
+        </p>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+textarea {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+textarea::-webkit-scrollbar {
+  display: none;
+}
+</style>
