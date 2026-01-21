@@ -1,71 +1,126 @@
 services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_reverse_proxy
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    develop:
+      watch:
+        - action: sync+restart
+          initial_sync: true
+          path: ./nginx.dev.conf.template
+          target: /etc/nginx/nginx.conf.template
+    command: sh -c "envsubst '$$API_PORT $$APP_PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"
+    environment:
+      - API_PORT=${API_PORT}
+      - APP_PORT=${APP_PORT}
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - public_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: dev.Dockerfile
+    restart: unless-stopped
+    volumes:
+      - "./frontend:/app"
+      - "/app/node_modules" # don't override installed node modules
+    environment:
+      - APP_PORT=${APP_PORT}
+      - VITE_GCP_API_KEY=${VITE_GCP_API_KEY}
+      - VITE_GCP_AUTH_DOMAIN=${VITE_GCP_AUTH_DOMAIN}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+    networks:
+      - public_net
+
+  api:
+    build:
+      context: ./api
+      dockerfile: dev.Dockerfile
+    restart: unless-stopped
+    develop:
+      watch:
+        - path: ./api/go.mod
+          action: restart
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${API_PORT}/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    environment:
+      # DB
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=${DB_PORT}
+      - DB_CONNECTION_COUNT=${DB_CONNECTION_COUNT}
+      # SERVER
+      - API_PORT=${API_PORT}
+      - PROJECT_ID=${PROJECT_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+    volumes:
+      - "./api:/app"
+      - $HOME/.config/gcloud/application_default_credentials.json:/app/gcp-credentials.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal_net
+      - public_net
+
   db:
     image: postgres:latest
     container_name: "${DB_NAME}_database"
     restart: unless-stopped
-    ports:
-      - "${DB_PORT}:5432"
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/pgdata
+    ports:
+      - 8001:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 3s
+    networks:
+      - internal_net
 
   db_migrator:
+    image: migrate/migrate:v4.19.1
     container_name: db_migrator
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM ubuntu:bionic
-
-        RUN apt-get update && \
-            apt-get install -y \
-            apt-transport-https \
-            ca-certificates \
-            curl \
-            gnupg-agent
-
-        RUN curl -sSL https://packagecloud.io/golang-migrate/migrate/gpgkey | apt-key add -
-        RUN echo "deb https://packagecloud.io/golang-migrate/migrate/ubuntu/ bionic main" > /etc/apt/sources.list.d/migrate.list
-        RUN apt-get update && \
-            apt-get install -y migrate
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - "./api/migrations:/api/migrations"
-    command: "migrate -database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path /api/migrations up"
-
-  db_seeder:
-    container_name: db_seeder
-    image: postgres:latest
-    volumes:
-      - "./api/seeds:/api/seeds"
-    depends_on:
-      db:
-        condition: service_healthy
-      db_migrator:
-        condition: service_completed_successfully
-    command: |-
-      /bin/sh -c '
-      echo "Running all seed scripts from /api/seeds...";
-      find /api/seeds -maxdepth 1 -name "*.sql" -exec /bin/sh -c "psql -f \"{}\" || exit 1" \;
-      echo "Database seeding complete.";
-      '
-    environment:
-      # Psql client automatically reads these variables:
-      PGHOST: db
-      PGUSER: ${DB_USER}
-      PGPASSWORD: ${DB_PASSWORD}
-      PGDATABASE: ${DB_NAME}
+      - "./api/db/migrations:/app/migrations"
+    entrypoint: "migrate"
+    command: "-database postgres://${DB_USER}:${DB_PASSWORD}@db:5432/golang_vue_todo_app?sslmode=disable -path /app/migrations up"
+    networks:
+      - internal_net
 
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  public_net:
+    driver: bridge
+  internal_net:
+    driver: bridge

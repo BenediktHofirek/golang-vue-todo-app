@@ -1,0 +1,49 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      - id: trailing-whitespace
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+      - id: detect-aws-credentials
+      - id: detect-private-key
+
+  # === API Hooks ===
+  -   repo: local
+      hooks:
+      -   id: go-fmt
+          name: Go Fmt
+          entry: go fmt
+          language: system
+          files: ^api/.*\.go$
+
+      -   id: go-vet
+          name: Go Vet
+          entry: go vet ./...
+          language: system
+          files: ^api/.*\.go$
+
+      -   id: go-imports
+          name: Go Imports
+          entry: goimports -w
+          language: system
+          files: ^api/.*\.go$
+
+  # === Frontend Hooks ===
+  -   repo: local
+      hooks:
+      -   id: prettier
+          name: Prettier
+          entry: sh -c 'cd frontend; pnpm prettier --write --experimental-cli $(for f in "$@"; do echo "${f#frontend/}"; done)'
+          language: system
+          files: ^frontend/.*\.(vue|js|jsx|ts|tsx|css|scss|json|md|yaml)$
+
+      -   id: eslint
+          name: ESLint
+          entry: sh -c 'cd frontend; pnpm eslint --fix --cache $(for f in "$@"; do echo "${f#frontend/}"; done)'
+          language: node
+          files: ^frontend/.*\.(vue|js|jsx|ts|tsx)$
